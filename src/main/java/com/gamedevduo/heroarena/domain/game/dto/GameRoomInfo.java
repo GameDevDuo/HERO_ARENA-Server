@@ -26,8 +26,4 @@ public class GameRoomInfo {
     private int maxPlayers;
 
     private long createdAt;
-    //방이 가득 찼는지 여부
-    public boolean isFull() {
-        return currentPlayers >= maxPlayers;
-    }
 }
