@@ -3,6 +3,7 @@ package com.gamedevduo.heroarena.domain.auth.service.impl;
 import com.gamedevduo.heroarena.domain.auth.entity.AuthCode;
 import com.gamedevduo.heroarena.domain.auth.entity.enums.VerifyCodeType;
 import com.gamedevduo.heroarena.domain.auth.presentation.dto.request.AuthCodeRequest;
+import com.gamedevduo.heroarena.domain.auth.presentation.dto.request.EmailVerifyRequest;
 import com.gamedevduo.heroarena.domain.auth.presentation.dto.request.PasswordChangeRequest;
 import com.gamedevduo.heroarena.domain.auth.repository.AuthCodeRepository;
 import com.gamedevduo.heroarena.domain.auth.service.PasswordChangeService;
@@ -124,29 +125,38 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
         }
     }
 
-
     @Transactional
-    @Auditable(action = "UPDATE", resourceType = "User")
-    public void passwordChange(PasswordChangeRequest request) {
-        AuthCode findCode = authCodeRepository.findByEmail(request.getEmail());
+    public void emailVerify(EmailVerifyRequest request) {
+        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
 
-        if (findCode.isAuthCodeExpired()) {
+        if (code == null) {
+            throw new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다.");
+        }
+
+        if (code.isAuthCodeExpired()) {
             authCodeRepository.deleteByEmail(request.getEmail());
             throw new HttpException(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었습니다.");
         }
 
-        if (!findCode.getCode().equals(request.getCode())) {
+        if (!code.getCode().equals(request.getCode())) {
             throw new HttpException(HttpStatus.BAD_REQUEST, "잘못된 인증 코드입니다.");
         }
-        updatePassword(request.getPassword(), request.getEmail());
-        authCodeRepository.deleteByEmail(request.getEmail());
+
+        code.updateEmailVerifyStatus(true);
     }
 
-    private void updatePassword(String newPassword, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "해당 이메일의 사용자가 존재하지 않습니다."));
 
-        String encodedPassword = passwordEncoder.encode(newPassword);
+    @Transactional
+    @Auditable(action = "UPDATE", resourceType = "User")
+    public void passwordChange(PasswordChangeRequest request) {
+        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
+        if (!code.isEmailVerifyStatus()) {
+            throw new HttpException(HttpStatus.BAD_REQUEST, "인증되지 않은 비밀번호 요청 입니다.");
+        }
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "해당 이메일의 사용자가 존재하지 않습니다."));
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
         user.updatePassword(encodedPassword);
+        authCodeRepository.deleteByEmail(request.getEmail());
     }
 }

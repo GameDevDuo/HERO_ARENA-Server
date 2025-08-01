@@ -60,7 +60,11 @@ public class AuthController {
         passwordChangeService.sendMail(request);
         return ResponseEntity.ok(BaseResponse.success("비밀번호 변경 메일 발송 성공"));
     }
-
+    @PostMapping("/pwchange/emailverify")
+    public ResponseEntity<BaseResponse<Void>> pwchangeEmailVerify(@RequestBody @Valid EmailVerifyRequest request) {
+        passwordChangeService.emailVerify(request);
+        return ResponseEntity.ok(BaseResponse.success("비밀번호 변경 인증 성공"));
+    }
     @PostMapping("/pwchange")
     public ResponseEntity<BaseResponse<Void>> mailCheck(@RequestBody @Valid PasswordChangeRequest request) {
         passwordChangeService.passwordChange(request);
