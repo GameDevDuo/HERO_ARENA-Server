@@ -16,7 +16,7 @@ public class PlayerUpdateMessage { //클라이언트 → 서버
     private Rotation rotation;
     private String action; // "공격", "스킬1", "궁극기"
     private String character;
-    private int health;
+    private Integer health;
     @Getter
     @Setter
     @Builder

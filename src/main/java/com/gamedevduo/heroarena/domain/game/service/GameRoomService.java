@@ -177,7 +177,7 @@ public class GameRoomService {
                             .rotation(rotation)
                             .action((String) state.get("action"))
                             .character((String) state.get("character"))
-                            .health((int) state.get("health"))
+                            .health((Integer) state.get("health"))
                             .build();
                 })
                 .collect(Collectors.toList());

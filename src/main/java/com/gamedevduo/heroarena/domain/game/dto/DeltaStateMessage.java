@@ -3,6 +3,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.relational.core.sql.In;
 
 import java.util.List;
 @Getter
@@ -25,6 +26,6 @@ public class DeltaStateMessage { //서버 → 클라이언트
         private String character;
         private PlayerUpdateMessage.Position position;
         private PlayerUpdateMessage.Rotation rotation;
-        private int health;
+        private Integer health;
     }
 }
