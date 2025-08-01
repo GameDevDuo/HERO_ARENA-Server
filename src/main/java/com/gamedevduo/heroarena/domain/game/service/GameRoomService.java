@@ -138,6 +138,8 @@ public class GameRoomService {
                 "position", update.getPosition(),
                 "rotation", update.getRotation(),
                 "action", update.getAction(),
+                "character", update.getCharacter(),
+                "health", update.getHealth(),
                 "lastUpdated", System.currentTimeMillis()
         );
 
