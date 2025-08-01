@@ -38,7 +38,7 @@ public class SignupServiceImpl implements SignupService {
     @Transactional
     public void sendSignupMail(AuthCodeRequest request) {
 
-        authCodeRepository.deleteByEmail(request.getEmail());
+        authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.SIGNUP);
 
         AuthCode authCode = AuthCode.builder()
             .email(request.getEmail())
@@ -127,14 +127,11 @@ public class SignupServiceImpl implements SignupService {
 
     @Transactional
     public void emailVerify(EmailVerifyRequest request) {
-        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
-
-        if (code == null) {
-            throw new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다.");
-        }
+        AuthCode code = authCodeRepository.findByEmailAndType(request.getEmail(), VerifyCodeType.SIGNUP)
+                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다."));
 
         if (code.isAuthCodeExpired()) {
-            authCodeRepository.deleteByEmail(request.getEmail());
+            authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.SIGNUP);
             throw new HttpException(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었습니다.");
         }
 
@@ -156,11 +153,11 @@ public class SignupServiceImpl implements SignupService {
             throw new HttpException(HttpStatus.BAD_REQUEST, "이미 사용 중인 이름입니다.");
         }
 
-        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
+        AuthCode code = authCodeRepository.findByEmailAndType(request.getEmail(), VerifyCodeType.SIGNUP)
+                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다."));
         if (!code.isEmailVerifyStatus()) {
             throw new HttpException(HttpStatus.BAD_REQUEST, "인증되지 않은 유저 입니다.");
         }
-
 
         User user = User.builder()
                 .name(request.getName())
@@ -168,5 +165,6 @@ public class SignupServiceImpl implements SignupService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
         userRepository.save(user);
+        authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.SIGNUP);
     }
 }

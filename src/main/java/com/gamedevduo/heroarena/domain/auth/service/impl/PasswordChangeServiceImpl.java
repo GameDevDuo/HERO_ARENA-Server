@@ -35,7 +35,7 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
 
     @Transactional
     public void sendMail(AuthCodeRequest request) {
-        authCodeRepository.deleteByEmail(request.getEmail());
+        authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.PASSWORD_RESET);
 
         AuthCode passwordChangeCode = AuthCode.builder()
             .email(request.getEmail())
@@ -127,14 +127,11 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
 
     @Transactional
     public void emailVerify(EmailVerifyRequest request) {
-        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
-
-        if (code == null) {
-            throw new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다.");
-        }
+        AuthCode code = authCodeRepository.findByEmailAndType(request.getEmail(), VerifyCodeType.PASSWORD_RESET)
+                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다."));
 
         if (code.isAuthCodeExpired()) {
-            authCodeRepository.deleteByEmail(request.getEmail());
+            authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.PASSWORD_RESET);
             throw new HttpException(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었습니다.");
         }
 
@@ -149,7 +146,8 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
     @Transactional
     @Auditable(action = "UPDATE", resourceType = "User")
     public void passwordChange(PasswordChangeRequest request) {
-        AuthCode code = authCodeRepository.findByEmail(request.getEmail());
+        AuthCode code = authCodeRepository.findByEmailAndType(request.getEmail(), VerifyCodeType.PASSWORD_RESET)
+                .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "인증 코드를 찾을 수 없습니다."));
         if (!code.isEmailVerifyStatus()) {
             throw new HttpException(HttpStatus.BAD_REQUEST, "인증되지 않은 비밀번호 요청 입니다.");
         }
@@ -157,6 +155,6 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
                 .orElseThrow(() -> new HttpException(HttpStatus.NOT_FOUND, "해당 이메일의 사용자가 존재하지 않습니다."));
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         user.updatePassword(encodedPassword);
-        authCodeRepository.deleteByEmail(request.getEmail());
+        authCodeRepository.deleteByEmailAndType(request.getEmail(), VerifyCodeType.PASSWORD_RESET);
     }
 }
