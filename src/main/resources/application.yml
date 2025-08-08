@@ -37,5 +37,5 @@ spring:
 jwt:
   accessTokenKey: ${JWT_ACCESS_TOKEN_KEY}
   refreshTokenKey: ${JWT_REFRESH_TOKEN_KEY}
-  accessTokenExpires: 1800000
+  accessTokenExpires: 60000
   refreshTokenExpires: 259200000
